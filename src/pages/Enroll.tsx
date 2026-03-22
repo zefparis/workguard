@@ -82,25 +82,29 @@ export function Enroll() {
     setStep('submitting')
 
     try {
+      const cognitiveBaseline = {
+        stroop_score: final.stroopScore / 100,
+        reflex_velocity_ms: final.reflexVelocityMs,
+        vocal_accuracy: final.vocalAccuracy / 100,
+        reaction_time_ms: final.reactionTimeMs,
+        // New voice biometrics payload (stored in Supabase)
+        // -- ALTER TABLE edguard_enrollments
+        // -- ADD COLUMN IF NOT EXISTS vocal_embedding JSONB;
+        // -- ADD COLUMN IF NOT EXISTS vocal_quality FLOAT;
+        vocal_embedding: final.vocalEmbedding,
+        vocal_quality: final.vocalQuality,
+        vocal_similarity_threshold: final.vocalSimilarityThreshold,
+      }
+
+      console.log('[ENROLL] payload cognitive_baseline:', JSON.stringify(cognitiveBaseline))
+
       const res = await enrollWorker({
         selfie_b64: selfieB64,
         first_name: form.firstName,
         last_name: form.lastName,
         email: form.email || `${form.firstName}.${form.lastName}@workguard.local`,
         tenant_id: import.meta.env.VITE_TENANT_ID,
-        cognitive_baseline: {
-          stroop_score: final.stroopScore / 100,
-          reflex_velocity_ms: final.reflexVelocityMs,
-          vocal_accuracy: final.vocalAccuracy / 100,
-          // New voice biometrics payload (stored in Supabase)
-          // -- ALTER TABLE edguard_enrollments
-          // -- ADD COLUMN IF NOT EXISTS vocal_embedding JSONB;
-          // -- ADD COLUMN IF NOT EXISTS vocal_quality FLOAT;
-          vocal_embedding: final.vocalEmbedding,
-          vocal_quality: final.vocalQuality,
-          vocal_similarity_threshold: final.vocalSimilarityThreshold,
-          reaction_time_ms: final.reactionTimeMs,
-        }
+        cognitive_baseline: cognitiveBaseline,
       })
       setWorkerId(res.student_id)
       setConf(Math.round(res.confidence))

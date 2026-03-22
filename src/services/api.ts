@@ -31,6 +31,9 @@ export async function enrollWorker(payload: {
     [key: string]: unknown
   }
 }): Promise<{ success: boolean; student_id: string; confidence: number }> {
+  console.log('[API] sending payload keys:', Object.keys(payload))
+  console.log('[API] has vocal_embedding:', !!payload.cognitive_baseline?.vocal_embedding)
+
   const res = await fetch(`${API}/edguard/enroll`, {
     method: 'POST',
     headers: headers(),
