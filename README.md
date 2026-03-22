@@ -43,9 +43,15 @@ Create a `.env` file in the root directory:
 
 ```env
 VITE_API_URL=https://hybrid-vector-api.onrender.com
-VITE_TENANT_ID=demo-tenant
-VITE_API_KEY=
+VITE_TENANT_ID=workguard-demo
+VITE_HV_API_KEY=workguard-key-2026
 ```
+
+Notes:
+- The EDGUARD API validates `VITE_HV_API_KEY` against the `edguard_tenants` table.
+- Example rows:
+  - tenant_id: `workguard-demo`, api_key: `workguard-key-2026`
+  - tenant_id: `payguard-demo`, api_key: `payguard-key-2026`
 
 ### Development
 
@@ -118,6 +124,15 @@ workguard/
 The app integrates with the Hybrid Vector API for:
 - Worker enrollment (`POST /edguard/enroll`)
 - Identity verification (`POST /edguard/verify`)
+
+## Voice Biometrics (browser-only)
+
+This project includes a client-side voice imprint using:
+- `MediaRecorder` + Web Audio decoding
+- MFCC extraction (40 coefficients)
+- A lightweight 192-dim embedding + cosine similarity
+
+The code is structured to later plug an ECAPA-TDNN ONNX model via `onnxruntime-web`.
 
 ## License
 

@@ -87,7 +87,7 @@ export function Enroll() {
         first_name: form.firstName,
         last_name: form.lastName,
         email: form.email || `${form.firstName}.${form.lastName}@workguard.local`,
-        tenant_id: 'demo-tenant',
+        tenant_id: import.meta.env.VITE_TENANT_ID,
         cognitive_baseline: {
           stroop_score: final.stroopScore / 100,
           reflex_velocity_ms: final.reflexVelocityMs,
@@ -111,7 +111,7 @@ export function Enroll() {
         employeeId: form.employeeId,
         jobRole: form.jobRole,
         employerSite: form.employerSite,
-        tenantId: 'demo-tenant',
+        tenantId: import.meta.env.VITE_TENANT_ID,
         cognitiveBaseline: final,
       })
       setSelfie(selfieB64)

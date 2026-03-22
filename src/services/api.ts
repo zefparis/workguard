@@ -1,11 +1,17 @@
 const API = import.meta.env.VITE_API_URL || 'https://hybrid-vector-api.onrender.com'
-const TENANT = import.meta.env.VITE_TENANT_ID || 'demo-tenant'
-const API_KEY = import.meta.env.VITE_HV_API_KEY || ''
+// Require explicit env config (no silent fallbacks in production)
+const TENANT = import.meta.env.VITE_TENANT_ID
+const API_KEY = import.meta.env.VITE_HV_API_KEY
 
-const headers = () => ({
-  'Content-Type': 'application/json',
-  'x-api-key': API_KEY,
-})
+const headers = () => {
+  if (!API_KEY) throw new Error('Missing VITE_HV_API_KEY')
+  if (!TENANT) throw new Error('Missing VITE_TENANT_ID')
+
+  return {
+    'Content-Type': 'application/json',
+    'x-api-key': API_KEY,
+  }
+}
 
 export async function enrollWorker(payload: {
   selfie_b64: string
