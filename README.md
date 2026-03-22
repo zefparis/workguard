@@ -1,3 +1,12 @@
+## Supabase schema notes (EDGUARD)
+
+```sql
+-- ALTER TABLE edguard_enrollments
+-- ADD COLUMN IF NOT EXISTS behavioral_profile JSONB;
+-- ADD COLUMN IF NOT EXISTS pq_public_key TEXT;
+-- ADD COLUMN IF NOT EXISTS pq_signature TEXT;
+```
+
 # WorkGuard — Worker Identity Verification
 
 Biometric attendance verification system for industrial sites in South Africa. Powered by AWS Rekognition and Hybrid Vector technology (3 French patents).
