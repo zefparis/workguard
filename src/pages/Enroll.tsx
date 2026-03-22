@@ -11,7 +11,6 @@ import type { CognitiveBaseline } from '../types'
 
 type Step = 'identity' | 'selfie' | 'stroop' | 'reflex' | 'vocal' | 'reaction' | 'submitting' | 'success' | 'error'
 
-const STEPS: Step[] = ['identity','selfie','stroop','reflex','vocal','reaction','submitting','success']
 const PROGRESS: Record<Step, number> = {
   identity:10, selfie:25, stroop:45, reflex:60, vocal:75, reaction:88, submitting:95, success:100, error:0
 }
@@ -57,8 +56,15 @@ export function Enroll() {
     setStep('vocal')
   }
 
-  function handleVocal(accuracy: number) {
-    setCog(c => ({ ...c, vocalAccuracy: accuracy }))
+  function handleVocal(result: { embedding: number[]; quality: number; threshold: number }) {
+    // Store voice biometrics locally
+    setCog(c => ({
+      ...c,
+      vocalAccuracy: Math.round(result.quality * 100),
+      vocalEmbedding: result.embedding,
+      vocalQuality: result.quality,
+      vocalSimilarityThreshold: result.threshold,
+    }))
     setStep('reaction')
   }
 
@@ -67,6 +73,9 @@ export function Enroll() {
       stroopScore: cognitive.stroopScore ?? 0,
       reflexVelocityMs: cognitive.reflexVelocityMs ?? 0,
       vocalAccuracy: cognitive.vocalAccuracy ?? 0,
+      vocalEmbedding: cognitive.vocalEmbedding,
+      vocalQuality: cognitive.vocalQuality,
+      vocalSimilarityThreshold: cognitive.vocalSimilarityThreshold ?? 0.75,
       reactionTimeMs: ms,
     }
     setCog(final)
@@ -83,6 +92,13 @@ export function Enroll() {
           stroop_score: final.stroopScore / 100,
           reflex_velocity_ms: final.reflexVelocityMs,
           vocal_accuracy: final.vocalAccuracy / 100,
+          // New voice biometrics payload (stored in Supabase)
+          // -- ALTER TABLE edguard_enrollments
+          // -- ADD COLUMN IF NOT EXISTS vocal_embedding JSONB;
+          // -- ADD COLUMN IF NOT EXISTS vocal_quality FLOAT;
+          vocal_embedding: final.vocalEmbedding,
+          vocal_quality: final.vocalQuality,
+          vocal_similarity_threshold: final.vocalSimilarityThreshold,
           reaction_time_ms: final.reactionTimeMs,
         }
       })

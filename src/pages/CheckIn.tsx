@@ -2,17 +2,22 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { SelfieCapture } from '../components/SelfieCapture'
 import { verifyWorker } from '../services/api'
+import { useWorkGuardStore } from '../store/workguardStore'
+import { useVoiceBiometrics } from '../hooks/useVoiceBiometrics'
 
-type Step = 'identity' | 'selfie' | 'verifying' | 'success' | 'failed'
+type Step = 'identity' | 'selfie' | 'verifying' | 'voice' | 'success' | 'failed'
 
 export function CheckIn() {
   const nav = useNavigate()
+  const { worker } = useWorkGuardStore()
+  const { isRecording, verifyVoice, countdownMs } = useVoiceBiometrics()
   const [step, setStep] = useState<Step>('identity')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName]   = useState('')
   const [result, setResult] = useState<{ similarity: number; firstName: string } | null>(null)
-  const [selfieB64, setSelfieB64] = useState('')
+  const [, setSelfieB64] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
+  const [voiceResult, setVoiceResult] = useState<{ matched: boolean; similarity: number } | null>(null)
   const checkedInAt = new Date().toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })
 
   function handleIdentity(e: React.FormEvent) {
@@ -28,13 +33,36 @@ export function CheckIn() {
       const res = await verifyWorker({ selfie_b64: b64, first_name: firstName, last_name: lastName })
       if (res.verified) {
         setResult({ similarity: Math.round(res.similarity), firstName: res.first_name })
-        setStep('success')
+        // Optional voice check if we have an enrolled embedding
+        const stored = worker?.cognitiveBaseline?.vocalEmbedding
+        if (stored && stored.length > 0 && Math.round(res.similarity) >= 80) {
+          setStep('voice')
+        } else {
+          setStep('success')
+        }
       } else {
         setResult({ similarity: Math.round(res.similarity), firstName: firstName })
         setStep('failed')
       }
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Verification failed')
+      setStep('failed')
+    }
+  }
+
+  async function handleVoiceCheck() {
+    const stored = worker?.cognitiveBaseline?.vocalEmbedding
+    if (!stored || stored.length === 0) {
+      setStep('success')
+      return
+    }
+
+    try {
+      const res = await verifyVoice(stored)
+      setVoiceResult(res)
+      setStep('success')
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : 'Voice verification failed')
       setStep('failed')
     }
   }
@@ -81,6 +109,24 @@ export function CheckIn() {
         </>
       )}
 
+      {step === 'voice' && (
+        <>
+          <div className="badge badge-amber">Optional Step — Voice Check</div>
+          <h1 className="step-title">Voice Verification</h1>
+          <p className="step-sub">Record 2 seconds to confirm identity.</p>
+          <button
+            className={`btn ${isRecording ? 'btn-danger' : 'btn-primary'}`}
+            onClick={handleVoiceCheck}
+            disabled={isRecording}
+          >
+            {isRecording ? `● Recording... ${Math.ceil(countdownMs / 1000)}s` : 'Record Voice (2s)'}
+          </button>
+          <button className="btn btn-outline" style={{ marginTop: 12 }} onClick={() => setStep('success')}>
+            Skip
+          </button>
+        </>
+      )}
+
       {step === 'success' && (
         <>
           <div style={{ fontSize: 64, marginBottom: 16 }}>✅</div>
@@ -100,6 +146,24 @@ export function CheckIn() {
               <span className="metric-label">Match score</span>
               <span className="metric-value" style={{ color: 'var(--green)' }}>{result?.similarity}%</span>
             </div>
+
+            {voiceResult && (
+              <div className="metric-row">
+                <span className="metric-label">Voice similarity</span>
+                <span className="metric-value" style={{ color: voiceResult.matched ? 'var(--green)' : 'var(--red)' }}>
+                  {Math.round(voiceResult.similarity * 100)}% {voiceResult.matched ? '✓' : '✗'}
+                </span>
+              </div>
+            )}
+
+            {voiceResult && (
+              <div className="metric-row">
+                <span className="metric-label">Combined</span>
+                <span className="metric-value">
+                  {Math.round(((result?.similarity ?? 0) / 100 * 0.7 + voiceResult.similarity * 0.3) * 100)}%
+                </span>
+              </div>
+            )}
             <div className="metric-row">
               <span className="metric-label">Status</span>
               <span className="metric-value" style={{ color: 'var(--green)' }}>PRESENT ✓</span>

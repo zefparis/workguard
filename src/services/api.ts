@@ -13,7 +13,17 @@ export async function enrollWorker(payload: {
   last_name: string
   email: string
   tenant_id: string
-  cognitive_baseline?: object
+  cognitive_baseline?: {
+    stroop_score?: number
+    reflex_velocity_ms?: number
+    vocal_accuracy?: number
+    // New voice biometrics
+    vocal_embedding?: number[]
+    vocal_quality?: number
+    vocal_similarity_threshold?: number
+    reaction_time_ms?: number
+    [key: string]: unknown
+  }
 }): Promise<{ success: boolean; student_id: string; confidence: number }> {
   const res = await fetch(`${API}/edguard/enroll`, {
     method: 'POST',
