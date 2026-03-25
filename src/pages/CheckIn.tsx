@@ -1,9 +1,10 @@
-import { memo, useCallback, useState, type ChangeEvent, type FormEvent } from 'react'
+import { memo, useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { SelfieCapture } from '../components/SelfieCapture'
 import { verifyWorker } from '../services/api'
 import { useWorkGuardStore } from '../store/workguardStore'
 import { useVoiceBiometrics } from '../hooks/useVoiceBiometrics'
+import { behavioralCollector, cognitiveCollector, faceCollector } from '../signal-engine'
 
 type Step = 'identity' | 'selfie' | 'verifying' | 'voice' | 'success' | 'failed'
 
@@ -48,6 +49,15 @@ export function CheckIn() {
   const nav = useNavigate()
   const { worker } = useWorkGuardStore()
   const { isRecording, verifyVoice, countdownMs } = useVoiceBiometrics()
+
+  useEffect(() => {
+    behavioralCollector.start()
+
+    return () => {
+      behavioralCollector.stop()
+    }
+  }, [])
+
   const [step, setStep] = useState<Step>('identity')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName]   = useState('')
@@ -72,21 +82,33 @@ export function CheckIn() {
   }, [firstName, lastName])
 
   async function handleSelfie(b64: string) {
+    faceCollector.capture(b64)
     setSelfieB64(b64)
     setStep('verifying')
+    const startedAt = performance.now()
+
     try {
       const res = await verifyWorker({ selfie_b64: b64, first_name: firstName, last_name: lastName })
+      const score = Math.round(res.similarity)
+      const durationMs = Math.round(performance.now() - startedAt)
+
+      cognitiveCollector.record({
+        testId: 'checkin',
+        score,
+        durationMs,
+      })
+
       if (res.verified) {
-        setResult({ similarity: Math.round(res.similarity), firstName: res.first_name })
+        setResult({ similarity: score, firstName: res.first_name })
         // Optional voice check if we have an enrolled embedding
         const stored = worker?.cognitiveBaseline?.vocalEmbedding
-        if (stored && stored.length > 0 && Math.round(res.similarity) >= 80) {
+        if (stored && stored.length > 0 && score >= 80) {
           setStep('voice')
         } else {
           setStep('success')
         }
       } else {
-        setResult({ similarity: Math.round(res.similarity), firstName: firstName })
+        setResult({ similarity: score, firstName: firstName })
         setStep('failed')
       }
     } catch (err) {
