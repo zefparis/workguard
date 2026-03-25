@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { memo, useCallback, useState, type ChangeEvent, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { SelfieCapture } from '../components/SelfieCapture'
 import { verifyWorker } from '../services/api'
@@ -6,6 +6,43 @@ import { useWorkGuardStore } from '../store/workguardStore'
 import { useVoiceBiometrics } from '../hooks/useVoiceBiometrics'
 
 type Step = 'identity' | 'selfie' | 'verifying' | 'voice' | 'success' | 'failed'
+
+type IdentityFormProps = {
+  firstName: string
+  lastName: string
+  onSubmit: (e: FormEvent) => void
+  onFirstNameChange: (e: ChangeEvent<HTMLInputElement>) => void
+  onLastNameChange: (e: ChangeEvent<HTMLInputElement>) => void
+}
+
+const IdentityForm = memo(function IdentityForm({
+  firstName,
+  lastName,
+  onSubmit,
+  onFirstNameChange,
+  onLastNameChange,
+}: IdentityFormProps) {
+  return (
+    <>
+      <div className="badge badge-green">Daily Check-In</div>
+      <h1 className="step-title">Good Morning</h1>
+      <p className="step-sub">Enter your name and take a quick selfie to confirm attendance.</p>
+      <form onSubmit={onSubmit} style={{ width: '100%' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="field">
+            <label>First Name</label>
+            <input value={firstName} onChange={onFirstNameChange} required placeholder="John" />
+          </div>
+          <div className="field">
+            <label>Last Name</label>
+            <input value={lastName} onChange={onLastNameChange} required placeholder="Smith" />
+          </div>
+        </div>
+        <button className="btn btn-success" type="submit">Continue →</button>
+      </form>
+    </>
+  )
+})
 
 export function CheckIn() {
   const nav = useNavigate()
@@ -20,11 +57,19 @@ export function CheckIn() {
   const [voiceResult, setVoiceResult] = useState<{ matched: boolean; similarity: number } | null>(null)
   const checkedInAt = new Date().toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })
 
-  function handleIdentity(e: React.FormEvent) {
+  const handleFirstNameChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    setFirstName(e.target.value)
+  }, [])
+
+  const handleLastNameChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    setLastName(e.target.value)
+  }, [])
+
+  const handleIdentity = useCallback((e: FormEvent) => {
     e.preventDefault()
     if (!firstName || !lastName) return
     setStep('selfie')
-  }
+  }, [firstName, lastName])
 
   async function handleSelfie(b64: string) {
     setSelfieB64(b64)
@@ -72,24 +117,13 @@ export function CheckIn() {
       <div className="logo" style={{ cursor: 'pointer' }} onClick={() => nav('/')}>← WORKGUARD</div>
 
       {step === 'identity' && (
-        <>
-          <div className="badge badge-green">Daily Check-In</div>
-          <h1 className="step-title">Good Morning</h1>
-          <p className="step-sub">Enter your name and take a quick selfie to confirm attendance.</p>
-          <form onSubmit={handleIdentity} style={{ width: '100%' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div className="field">
-                <label>First Name</label>
-                <input value={firstName} onChange={e => setFirstName(e.target.value)} required placeholder="John" />
-              </div>
-              <div className="field">
-                <label>Last Name</label>
-                <input value={lastName} onChange={e => setLastName(e.target.value)} required placeholder="Smith" />
-              </div>
-            </div>
-            <button className="btn btn-success" type="submit">Continue →</button>
-          </form>
-        </>
+        <IdentityForm
+          firstName={firstName}
+          lastName={lastName}
+          onSubmit={handleIdentity}
+          onFirstNameChange={handleFirstNameChange}
+          onLastNameChange={handleLastNameChange}
+        />
       )}
 
       {step === 'selfie' && (
