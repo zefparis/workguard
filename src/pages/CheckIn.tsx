@@ -4,7 +4,7 @@ import { SelfieCapture } from '../components/SelfieCapture'
 import { verifyWorker } from '../services/api'
 import { useWorkGuardStore } from '../store/workguardStore'
 import { useVoiceBiometrics } from '../hooks/useVoiceBiometrics'
-import { behavioralCollector, cognitiveCollector, faceCollector } from '../signal-engine'
+import { behavioralCollector, cognitiveCollector, faceCollector, signalBus } from '../signal-engine'
 
 type Step = 'identity' | 'selfie' | 'verifying' | 'voice' | 'success' | 'failed'
 
@@ -65,6 +65,19 @@ export function CheckIn() {
   const [, setSelfieB64] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
   const [voiceResult, setVoiceResult] = useState<{ matched: boolean; similarity: number } | null>(null)
+
+  useEffect(() => {
+    if (step === 'selfie') {
+      signalBus.pause()
+
+      return () => {
+        signalBus.resume()
+      }
+    }
+
+    signalBus.resume()
+  }, [step])
+
   const checkedInAt = new Date().toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })
 
   const handleFirstNameChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
