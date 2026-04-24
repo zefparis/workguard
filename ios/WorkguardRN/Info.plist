@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>WorkguardRN</string>
+	<string>WorkGuard</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -32,6 +32,14 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>HV-GUARD WorkGuard uses the camera for identity verification and biometric enrollment.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>HV-GUARD WorkGuard uses the microphone for vocal imprint verification.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>HV-GUARD WorkGuard uses speech recognition for cognitive authentication.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>HV-GUARD WorkGuard uses Face ID to protect the post-quantum private keys stored on this device.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>
 	<key>UILaunchStoryboardName</key>

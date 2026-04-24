@@ -1,4 +1,4 @@
-package com.workguardrn
+package com.hcs.workguard
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

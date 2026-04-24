@@ -2,6 +2,14 @@ apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
+// react-native-config: reads .env at the project root and exposes the values
+// to both JS (Config.* at runtime) and native (BuildConfig.* at compile time).
+project.ext.envConfigFiles = [
+    debug: ".env",
+    release: ".env",
+]
+apply from: "../../node_modules/react-native-config/android/dotenv.gradle"
+
 /**
  * This is the configuration block to customize your React Native Android app.
  * By default you don't need to apply any configuration, just uncomment the lines you need.
@@ -77,13 +85,16 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.workguardrn"
+    namespace "com.hcs.workguard"
     defaultConfig {
-        applicationId "com.workguardrn"
+        applicationId "com.hcs.workguard"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        // Required by react-native-config so BuildConfig is generated in the
+        // same package the library looks it up from.
+        resValue "string", "build_config_package", "com.hcs.workguard"
     }
     signingConfigs {
         debug {

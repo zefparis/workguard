@@ -1,0 +1,82 @@
+workflows:
+  workguard-ios:
+    name: WorkGuard iOS TestFlight
+    max_build_duration: 90
+    environment:
+      node: 22
+      xcode: latest
+      cocoapods: default
+      vars:
+        XCODE_WORKSPACE: "ios/WorkguardRN.xcworkspace"
+        XCODE_SCHEME: "WorkguardRN"
+        BUNDLE_ID: "com.hcs.workguard"
+        APP_STORE_CONNECT_ISSUER_ID: $APP_STORE_CONNECT_ISSUER_ID
+        APP_STORE_CONNECT_KEY_IDENTIFIER: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        APP_STORE_CONNECT_PRIVATE_KEY: $APP_STORE_CONNECT_PRIVATE_KEY
+        CERTIFICATE_PRIVATE_KEY: $CERTIFICATE_PRIVATE_KEY
+        API_URL: $API_URL
+        WORKGUARD_API_KEY: $WORKGUARD_API_KEY
+        DYNAMSOFT_LICENSE: $DYNAMSOFT_LICENSE
+        TENANT_ID: $TENANT_ID
+    scripts:
+      - name: Write .env from Codemagic vars
+        script: |
+          cat > .env <<EOF
+          API_URL=$API_URL
+          WORKGUARD_API_KEY=$WORKGUARD_API_KEY
+          DYNAMSOFT_LICENSE=$DYNAMSOFT_LICENSE
+          TENANT_ID=$TENANT_ID
+          EOF
+      - name: Install npm dependencies
+        script: npm ci --legacy-peer-deps
+      - name: Install CocoaPods dependencies
+        script: cd ios && pod install
+      - name: Set up provisioning profiles
+        script: xcode-project use-profiles
+      - name: Increment build number
+        script: |
+          cd ios
+          agvtool new-version -all $(($(app-store-connect get-latest-testflight-build-number "$APP_STORE_CONNECT_APP_ID") + 1))
+      - name: Build iOS release
+        script: |
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+
+  workguard-android:
+    name: WorkGuard Android APK
+    max_build_duration: 60
+    environment:
+      node: 22
+      java: 17
+      vars:
+        PACKAGE_NAME: "com.hcs.workguard"
+        API_URL: $API_URL
+        WORKGUARD_API_KEY: $WORKGUARD_API_KEY
+        DYNAMSOFT_LICENSE: $DYNAMSOFT_LICENSE
+        TENANT_ID: $TENANT_ID
+    scripts:
+      - name: Write .env from Codemagic vars
+        script: |
+          cat > .env <<EOF
+          API_URL=$API_URL
+          WORKGUARD_API_KEY=$WORKGUARD_API_KEY
+          DYNAMSOFT_LICENSE=$DYNAMSOFT_LICENSE
+          TENANT_ID=$TENANT_ID
+          EOF
+      - name: Install npm dependencies
+        script: npm ci --legacy-peer-deps
+      - name: Build Android release APK
+        script: |
+          cd android
+          ./gradlew assembleRelease
+    artifacts:
+      - android/app/build/outputs/apk/release/*.apk
+      - android/app/build/outputs/bundle/release/*.aab
