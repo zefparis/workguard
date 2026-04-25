@@ -13,7 +13,11 @@ import { assertEnv } from './src/config/env'
 
 function App(): React.JSX.Element {
   useEffect(() => {
-    assertEnv()
+    try {
+      assertEnv()
+    } catch (e) {
+      console.warn('Env not fully loaded:', e)
+    }
     SignalBus.start()
     startBehavioralCollector()
     return () => {
