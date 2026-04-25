@@ -79,3 +79,8 @@ yarn-error.log
 .env.local
 .env.*.local
 
+# Local build logs
+run-android.log
+run-ios.log
+*.log
+
