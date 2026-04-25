@@ -9,12 +9,18 @@ import {
   startBehavioralCollector,
   stopBehavioralCollector,
 } from './src/signal-engine/BehavioralCollector'
-import { assertEnv } from './src/config/env'
+import { assertEnv, ENV } from './src/config/env'
+import { LicenseManager } from 'dynamsoft-capture-vision-react-native'
 
 function App(): React.JSX.Element {
   useEffect(() => {
     try {
       assertEnv()
+      if (ENV.DYNAMSOFT_LICENSE) {
+        LicenseManager.initLicense(ENV.DYNAMSOFT_LICENSE)
+          .then(() => console.log('[dynamsoft] License initialized'))
+          .catch((err) => console.warn('[dynamsoft] License init failed:', err))
+      }
     } catch (e) {
       console.warn('Env not fully loaded:', e)
     }

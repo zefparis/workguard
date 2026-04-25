@@ -16,8 +16,10 @@ function loadNativeConfig(): RNConfig {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const mod = require('react-native-config')
     const cfg = (mod && (mod.default ?? mod)) as RNConfig | null | undefined
+    console.log('[env] Raw config keys:', Object.keys(cfg ?? {}))
     return cfg ?? {}
-  } catch {
+  } catch (e) {
+    console.warn('[env] Failed to load native config:', e)
     return {}
   }
 }

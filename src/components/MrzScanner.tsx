@@ -51,7 +51,6 @@ export const MrzScannerComponent: React.FC<Props> = ({ onVerified, onSkip, onErr
     setBusy(true)
     try {
       const config: MRZScanConfig = {
-        license: ENV.DYNAMSOFT_LICENSE,
         isGuideFrameVisible: true,
         isTorchButtonVisible: true,
         isCloseButtonVisible: true,
