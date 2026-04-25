@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware'
-import { MMKV } from 'react-native-mmkv'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import type {
   MrzResult,
   PostQuantumSealResult,
@@ -15,20 +15,14 @@ import type {
  * App-wide persistent store, shape-compatible with the web WorkGuard store
  * so admin dashboards can reason about mobile + web enrollments uniformly.
  *
- * Persistence is backed by MMKV — 30x faster than AsyncStorage on RN,
- * synchronous, and writes land on disk before the next render tick.
+ * Persistence is backed by AsyncStorage (async, JS-bridge based). We keep the
+ * persisted surface minimal via `partialize` so serialization cost stays low.
  */
 
-const mmkv = new MMKV({ id: 'workguard-rn' })
-
-const mmkvStorage: StateStorage = {
-  getItem: (name) => mmkv.getString(name) ?? null,
-  setItem: (name, value) => {
-    mmkv.set(name, value)
-  },
-  removeItem: (name) => {
-    mmkv.delete(name)
-  },
+const zustandStorage: StateStorage = {
+  getItem: async (name) => await AsyncStorage.getItem(name),
+  setItem: async (name, value) => await AsyncStorage.setItem(name, value),
+  removeItem: async (name) => await AsyncStorage.removeItem(name),
 }
 
 export type EnrollmentStep =
@@ -122,7 +116,7 @@ export const useWorkguardStore = create<WorkguardState>()(
     }),
     {
       name: 'workguard-rn-store',
-      storage: createJSONStorage(() => mmkvStorage),
+      storage: createJSONStorage(() => zustandStorage),
       // Don't persist in-progress enrollment buffers; only finalized worker.
       partialize: (state) => ({ worker: state.worker }),
     },

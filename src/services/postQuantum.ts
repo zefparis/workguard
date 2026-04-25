@@ -1,7 +1,7 @@
 import { MlKem768 } from 'mlkem'
 import { ml_dsa65 } from '@noble/post-quantum/ml-dsa'
 import { sha256 } from '@noble/hashes/sha2'
-import { randomBytes } from '@noble/post-quantum/utils'
+import { randomBytes } from '@noble/hashes/utils'
 import * as Keychain from 'react-native-keychain'
 import type { PostQuantumSealResult } from '../types'
 
